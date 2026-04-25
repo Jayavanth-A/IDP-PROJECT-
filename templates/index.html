@@ -1,0 +1,683 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MediPredict — 30-Day Readmission Intelligence</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ── Design Tokens ───────────────────────────────── */
+    :root {
+      --bg:        #050d1a;
+      --surface:   #0b1828;
+      --card:      #0f2035;
+      --border:    rgba(99,174,255,0.12);
+      --blue:      #3b9eff;
+      --blue-glow: rgba(59,158,255,0.18);
+      --teal:      #00d4b4;
+      --red:       #ff4d6d;
+      --red-glow:  rgba(255,77,109,0.20);
+      --text:      #e2eaf6;
+      --muted:     #6b82a0;
+      --font-head: 'DM Serif Display', serif;
+      --font-body: 'DM Sans', sans-serif;
+      --font-mono: 'JetBrains Mono', monospace;
+      --radius:    14px;
+      --transition: 0.22s cubic-bezier(.4,0,.2,1);
+    }
+
+    /* ── Reset / Base ────────────────────────────────── */
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 15px;
+      line-height: 1.6;
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
+
+    /* ── Animated background grid ───────────────────── */
+    body::before {
+      content: "";
+      position: fixed; inset: 0;
+      background-image:
+        linear-gradient(rgba(59,158,255,0.04) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(59,158,255,0.04) 1px, transparent 1px);
+      background-size: 40px 40px;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    /* ── Glow blobs ──────────────────────────────────── */
+    .blob {
+      position: fixed;
+      border-radius: 50%;
+      filter: blur(80px);
+      opacity: 0.25;
+      pointer-events: none;
+      z-index: 0;
+      animation: blobFloat 12s ease-in-out infinite alternate;
+    }
+    .blob-1 { width: 480px; height: 480px; background: #1a6bff; top: -120px; left: -80px; }
+    .blob-2 { width: 360px; height: 360px; background: #00d4b4; bottom: 80px; right: -60px; animation-delay: -4s; }
+    @keyframes blobFloat {
+      from { transform: translate(0,0) scale(1); }
+      to   { transform: translate(30px, 20px) scale(1.05); }
+    }
+
+    /* ── Layout ──────────────────────────────────────── */
+    .wrapper {
+      position: relative; z-index: 1;
+      max-width: 1140px;
+      margin: 0 auto;
+      padding: 0 24px 80px;
+    }
+
+    /* ── Header ──────────────────────────────────────── */
+    header {
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 28px 0 18px;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 48px;
+    }
+    .logo {
+      display: flex; align-items: center; gap: 12px;
+    }
+    .logo-icon {
+      width: 40px; height: 40px;
+      background: linear-gradient(135deg, #1a6bff, #00d4b4);
+      border-radius: 10px;
+      display: grid; place-items: center;
+      font-size: 20px;
+    }
+    .logo-text { font-family: var(--font-head); font-size: 1.4rem; color: #fff; }
+    .logo-sub  { font-size: 0.72rem; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; }
+    .badge {
+      font-family: var(--font-mono); font-size: 0.7rem;
+      background: var(--blue-glow); color: var(--blue);
+      border: 1px solid rgba(59,158,255,0.3);
+      padding: 4px 12px; border-radius: 20px;
+    }
+
+    /* ── Hero tagline ────────────────────────────────── */
+    .hero {
+      text-align: center;
+      margin-bottom: 52px;
+    }
+    .hero h1 {
+      font-family: var(--font-head);
+      font-size: clamp(2rem, 4vw, 3.2rem);
+      color: #fff;
+      line-height: 1.15;
+      margin-bottom: 14px;
+    }
+    .hero h1 em { color: var(--teal); font-style: italic; }
+    .hero p { color: var(--muted); max-width: 540px; margin: 0 auto; }
+
+    /* ── Metric cards ────────────────────────────────── */
+    .metrics-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(155px, 1fr));
+      gap: 16px;
+      margin-bottom: 48px;
+    }
+    .metric-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 20px 18px;
+      position: relative; overflow: hidden;
+      transition: transform var(--transition), border-color var(--transition);
+    }
+    .metric-card:hover { transform: translateY(-3px); border-color: rgba(59,158,255,0.3); }
+    .metric-card::before {
+      content: "";
+      position: absolute; top: 0; left: 0; right: 0; height: 2px;
+      background: linear-gradient(90deg, var(--blue), var(--teal));
+    }
+    .metric-label { font-size: 0.72rem; color: var(--muted); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 8px; }
+    .metric-value { font-family: var(--font-mono); font-size: 1.7rem; font-weight: 500; color: #fff; }
+    .metric-pct   { font-size: 0.8rem; color: var(--teal); margin-top: 2px; }
+
+    /* ── Main grid ───────────────────────────────────── */
+    .main-grid {
+      display: grid;
+      grid-template-columns: 1fr 420px;
+      gap: 28px;
+      align-items: start;
+    }
+    @media(max-width: 860px) { .main-grid { grid-template-columns: 1fr; } }
+
+    /* ── Card shell ──────────────────────────────────── */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 28px 28px 32px;
+    }
+    .card-title {
+      font-family: var(--font-head);
+      font-size: 1.15rem;
+      color: #fff;
+      margin-bottom: 24px;
+      display: flex; align-items: center; gap: 10px;
+    }
+    .card-title .dot {
+      width: 8px; height: 8px; border-radius: 50%;
+      background: linear-gradient(135deg, var(--blue), var(--teal));
+    }
+
+    /* ── Form ────────────────────────────────────────── */
+    .form-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 18px;
+    }
+    @media(max-width: 560px) { .form-grid { grid-template-columns: 1fr; } }
+    .form-group { display: flex; flex-direction: column; gap: 7px; }
+    .form-group.full { grid-column: 1 / -1; }
+    label {
+      font-size: 0.78rem; color: var(--muted);
+      letter-spacing: .06em; text-transform: uppercase; font-weight: 500;
+    }
+    input, select {
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      color: var(--text);
+      font-family: var(--font-body);
+      font-size: 0.92rem;
+      padding: 10px 14px;
+      transition: border-color var(--transition), box-shadow var(--transition);
+      outline: none;
+      width: 100%;
+    }
+    input:focus, select:focus {
+      border-color: var(--blue);
+      box-shadow: 0 0 0 3px var(--blue-glow);
+    }
+    select option { background: var(--surface); }
+
+    /* ── Submit button ───────────────────────────────── */
+    .btn-predict {
+      margin-top: 24px;
+      width: 100%;
+      padding: 13px;
+      border: none; cursor: pointer;
+      border-radius: 10px;
+      font-family: var(--font-body);
+      font-size: 0.95rem; font-weight: 600;
+      letter-spacing: .04em;
+      background: linear-gradient(90deg, #1a6bff, #00d4b4);
+      color: #fff;
+      position: relative; overflow: hidden;
+      transition: opacity var(--transition), transform var(--transition);
+    }
+    .btn-predict:hover   { opacity: 0.9; transform: translateY(-1px); }
+    .btn-predict:active  { transform: translateY(0); }
+    .btn-predict.loading { pointer-events: none; opacity: 0.75; }
+    .btn-predict.loading::after {
+      content: "";
+      position: absolute; inset: 0;
+      background: linear-gradient(90deg, transparent, rgba(255,255,255,0.15), transparent);
+      animation: shimmer 1s infinite;
+    }
+    @keyframes shimmer { from{transform:translateX(-100%)} to{transform:translateX(100%)} }
+
+    /* ── Result panel ────────────────────────────────── */
+    .result-panel {
+      display: none;
+      margin-top: 24px;
+      border-radius: var(--radius);
+      padding: 24px;
+      text-align: center;
+      border: 1px solid;
+      animation: fadeSlide .4s ease;
+    }
+    @keyframes fadeSlide {
+      from { opacity:0; transform:translateY(10px); }
+      to   { opacity:1; transform:translateY(0); }
+    }
+    .result-panel.high {
+      background: rgba(255,77,109,0.08);
+      border-color: rgba(255,77,109,0.35);
+    }
+    .result-panel.low {
+      background: rgba(0,212,180,0.07);
+      border-color: rgba(0,212,180,0.35);
+    }
+    .result-icon   { font-size: 2.8rem; margin-bottom: 10px; }
+    .result-label  { font-family: var(--font-head); font-size: 1.6rem; margin-bottom: 6px; }
+    .result-panel.high .result-label { color: var(--red); }
+    .result-panel.low  .result-label { color: var(--teal); }
+    .result-prob   { font-family: var(--font-mono); font-size: 0.9rem; color: var(--muted); }
+
+    /* ── Gauge ───────────────────────────────────────── */
+    .gauge-wrap {
+      position: relative; width: 160px; height: 90px;
+      margin: 16px auto 8px;
+    }
+    .gauge-svg { overflow: visible; }
+    .gauge-track { fill: none; stroke: var(--border); stroke-width: 14; }
+    .gauge-fill  { fill: none; stroke-width: 14; stroke-linecap: round;
+                   transition: stroke-dashoffset 1s cubic-bezier(.4,0,.2,1);
+                   transform-origin: 80px 80px; }
+    .gauge-value {
+      position: absolute; bottom: 0; left: 50%; transform: translateX(-50%);
+      font-family: var(--font-mono); font-size: 1.4rem; font-weight: 500; color: #fff;
+    }
+
+    /* ── Info / sidebar ──────────────────────────────── */
+    .info-stack { display: flex; flex-direction: column; gap: 20px; }
+
+    .about-card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: var(--radius);
+      padding: 24px;
+    }
+    .about-card h3 {
+      font-family: var(--font-head);
+      font-size: 1rem; color: #fff;
+      margin-bottom: 14px;
+    }
+    .about-card p { font-size: 0.87rem; color: var(--muted); line-height: 1.65; }
+
+    /* ── Risk factors list ───────────────────────────── */
+    .factors { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .factors li {
+      display: flex; align-items: center; gap: 10px;
+      font-size: 0.87rem; color: var(--muted);
+    }
+    .factors li .bar {
+      flex: 1; height: 4px; background: var(--surface);
+      border-radius: 4px; overflow: hidden;
+    }
+    .factors li .bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, var(--blue), var(--teal));
+      border-radius: 4px;
+    }
+    .factors li span:first-child { min-width: 160px; }
+    .factors li .pct {
+      font-family: var(--font-mono); font-size: 0.8rem; color: var(--blue); min-width: 38px; text-align: right;
+    }
+
+    /* ── Plots ───────────────────────────────────────── */
+    .plots-row {
+      display: grid; grid-template-columns: 1fr 1fr;
+      gap: 16px; margin-top: 20px;
+    }
+    @media(max-width:600px){ .plots-row { grid-template-columns: 1fr; } }
+    .plot-img {
+      width: 100%; border-radius: 8px;
+      border: 1px solid var(--border);
+      background: var(--surface);
+    }
+    .plot-caption { font-size: 0.75rem; color: var(--muted); text-align: center; margin-top: 6px; }
+
+    /* ── Footer ──────────────────────────────────────── */
+    footer {
+      text-align: center;
+      padding: 32px 0 0;
+      font-size: 0.78rem;
+      color: var(--muted);
+      border-top: 1px solid var(--border);
+      margin-top: 60px;
+    }
+  </style>
+</head>
+<body>
+
+<!-- ambient blobs -->
+<div class="blob blob-1"></div>
+<div class="blob blob-2"></div>
+
+<div class="wrapper">
+
+  <!-- HEADER -->
+  <header>
+    <div class="logo">
+      <div class="logo-icon">🏥</div>
+      <div>
+        <div class="logo-text">MediPredict</div>
+        <div class="logo-sub">Clinical Decision Intelligence</div>
+      </div>
+    </div>
+    <span class="badge">Random Forest · SMOTE · v1.0</span>
+  </header>
+
+  <!-- HERO -->
+  <div class="hero">
+    <h1>Predict 30-Day Hospital<br><em>Readmission Risk</em></h1>
+    <p>Enter patient clinical data below. The ML model returns an instant risk
+       assessment with confidence probability to support discharge planning.</p>
+  </div>
+
+  <!-- MODEL METRICS -->
+  <div class="metrics-row" id="metricsRow">
+    <div class="metric-card">
+      <div class="metric-label">Accuracy</div>
+      <div class="metric-value" id="mAcc">—</div>
+      <div class="metric-pct">Overall correctness</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Precision</div>
+      <div class="metric-value" id="mPrec">—</div>
+      <div class="metric-pct">Of predicted +ve</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">Recall</div>
+      <div class="metric-value" id="mRec">—</div>
+      <div class="metric-pct">True positive rate</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">F1-Score</div>
+      <div class="metric-value" id="mF1">—</div>
+      <div class="metric-pct">Harmonic mean</div>
+    </div>
+    <div class="metric-card">
+      <div class="metric-label">ROC-AUC</div>
+      <div class="metric-value" id="mAUC">—</div>
+      <div class="metric-pct">Discriminating power</div>
+    </div>
+  </div>
+
+  <!-- MAIN GRID -->
+  <div class="main-grid">
+
+    <!-- LEFT: FORM -->
+    <div>
+      <div class="card">
+        <div class="card-title"><span class="dot"></span> Patient Data Entry</div>
+
+        <div class="form-grid">
+
+          <div class="form-group">
+            <label for="age">Age (years)</label>
+            <input type="number" id="age" min="18" max="95" placeholder="e.g. 67" required />
+          </div>
+
+          <div class="form-group">
+            <label for="gender">Gender</label>
+            <select id="gender">
+              <option value="Male">Male</option>
+              <option value="Female">Female</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="diagnosis_code">Primary Diagnosis</label>
+            <select id="diagnosis_code">
+              <option value="250.00">250.00 — Diabetes Mellitus</option>
+              <option value="428.0">428.0 — Heart Failure</option>
+              <option value="486">486 — Pneumonia</option>
+              <option value="414.01">414.01 — Coronary Artery Disease</option>
+              <option value="585.3">585.3 — Chronic Kidney Disease</option>
+              <option value="496">496 — COPD</option>
+              <option value="038.9">038.9 — Septicemia</option>
+              <option value="410.71">410.71 — Myocardial Infarction</option>
+            </select>
+          </div>
+
+          <div class="form-group">
+            <label for="length_of_stay">Length of Stay (days)</label>
+            <input type="number" id="length_of_stay" min="1" max="30" placeholder="e.g. 5" required />
+          </div>
+
+          <div class="form-group">
+            <label for="num_previous_admissions">Previous Admissions</label>
+            <input type="number" id="num_previous_admissions" min="0" max="10" placeholder="e.g. 2" required />
+          </div>
+
+          <div class="form-group">
+            <label for="num_medications">Num. Medications</label>
+            <input type="number" id="num_medications" min="1" max="25" placeholder="e.g. 8" />
+          </div>
+
+          <div class="form-group">
+            <label for="num_lab_procedures">Lab Procedures</label>
+            <input type="number" id="num_lab_procedures" min="1" max="80" placeholder="e.g. 42" />
+          </div>
+
+          <div class="form-group">
+            <label for="a1c_result">A1C Result</label>
+            <select id="a1c_result">
+              <option value="None">None / Not tested</option>
+              <option value="Normal">Normal</option>
+              <option value=">7">&gt;7 (Elevated)</option>
+              <option value=">8">&gt;8 (High)</option>
+            </select>
+          </div>
+
+        </div>
+
+        <button class="btn-predict" id="predictBtn" onclick="runPrediction()">
+          ⚕ &nbsp; Assess Readmission Risk
+        </button>
+
+        <!-- Result panel -->
+        <div class="result-panel" id="resultPanel">
+          <div class="result-icon" id="resultIcon"></div>
+
+          <!-- Gauge -->
+          <div class="gauge-wrap">
+            <svg class="gauge-svg" viewBox="0 0 160 90" width="160" height="90">
+              <path class="gauge-track"
+                d="M 10 80 A 70 70 0 0 1 150 80" />
+              <path class="gauge-fill" id="gaugeFill"
+                d="M 10 80 A 70 70 0 0 1 150 80"
+                stroke="#3b9eff"
+                stroke-dasharray="220"
+                stroke-dashoffset="220" />
+            </svg>
+            <div class="gauge-value" id="gaugeValue">0%</div>
+          </div>
+
+          <div class="result-label"  id="resultLabel"></div>
+          <div class="result-prob"   id="resultProb"></div>
+        </div>
+      </div>
+
+      <!-- Plots (shown after training) -->
+      <div class="card" style="margin-top:24px;">
+        <div class="card-title"><span class="dot"></span> Model Evaluation Plots</div>
+        <div class="plots-row">
+          <div>
+            <img src="/static/plots/roc_curve.png" class="plot-img"
+                 onerror="this.parentElement.style.display='none'" />
+            <div class="plot-caption">ROC Curve</div>
+          </div>
+          <div>
+            <img src="/static/plots/confusion_matrix.png" class="plot-img"
+                 onerror="this.parentElement.style.display='none'" />
+            <div class="plot-caption">Confusion Matrix</div>
+          </div>
+        </div>
+        <div style="margin-top:16px;">
+          <img src="/static/plots/feature_importance.png" class="plot-img"
+               onerror="this.style.display='none'" style="max-height:200px; object-fit:contain;" />
+          <div class="plot-caption">Feature Importances</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RIGHT: SIDEBAR -->
+    <div class="info-stack">
+
+      <div class="about-card">
+        <h3>🔬 About This Model</h3>
+        <p>
+          A <strong>Random Forest Classifier</strong> (300 trees) trained on clinical
+          patient records. Class imbalance is handled with <strong>SMOTE</strong>,
+          and features are standardised via <strong>StandardScaler</strong>.
+          The model predicts whether a patient will be readmitted within
+          <strong>30 days</strong> of discharge.
+        </p>
+      </div>
+
+      <div class="about-card">
+        <h3>📊 Key Risk Factors</h3>
+        <ul class="factors">
+          <li>
+            <span>Prev. Admissions</span>
+            <div class="bar"><div class="bar-fill" style="width:92%"></div></div>
+            <span class="pct">92%</span>
+          </li>
+          <li>
+            <span>Num. Medications</span>
+            <div class="bar"><div class="bar-fill" style="width:78%"></div></div>
+            <span class="pct">78%</span>
+          </li>
+          <li>
+            <span>Age</span>
+            <div class="bar"><div class="bar-fill" style="width:71%"></div></div>
+            <span class="pct">71%</span>
+          </li>
+          <li>
+            <span>Lab Procedures</span>
+            <div class="bar"><div class="bar-fill" style="width:64%"></div></div>
+            <span class="pct">64%</span>
+          </li>
+          <li>
+            <span>Length of Stay</span>
+            <div class="bar"><div class="bar-fill" style="width:58%"></div></div>
+            <span class="pct">58%</span>
+          </li>
+          <li>
+            <span>A1C Result</span>
+            <div class="bar"><div class="bar-fill" style="width:42%"></div></div>
+            <span class="pct">42%</span>
+          </li>
+          <li>
+            <span>Diagnosis Code</span>
+            <div class="bar"><div class="bar-fill" style="width:36%"></div></div>
+            <span class="pct">36%</span>
+          </li>
+        </ul>
+      </div>
+
+      <div class="about-card">
+        <h3>⚠️ Risk Interpretation</h3>
+        <p style="margin-bottom:10px;">
+          <span style="color:var(--red); font-weight:600;">High Risk (&gt;50%)</span><br/>
+          Patient likely to be readmitted. Recommend enhanced discharge planning,
+          follow-up scheduling, and medication reconciliation.
+        </p>
+        <p>
+          <span style="color:var(--teal); font-weight:600;">Low Risk (≤50%)</span><br/>
+          Standard discharge protocol. Monitor for changes in clinical status
+          before discharge.
+        </p>
+      </div>
+
+      <div class="about-card">
+        <h3>📦 Real Dataset</h3>
+        <p>
+          This model can be retrained on the real
+          <strong>Diabetes 130-US Hospitals</strong> dataset from Kaggle
+          (101,766 inpatient encounters).<br/><br/>
+          <code style="font-family:var(--font-mono); font-size:0.78rem; color:var(--blue);">
+            kaggle datasets download -d brandao/diabetes
+          </code>
+          <br/><br/>
+          Then update <code style="font-family:var(--font-mono); font-size:0.78rem;">data_loader.py</code>
+          to call <code style="font-family:var(--font-mono); font-size:0.78rem;">load_kaggle_data()</code>.
+        </p>
+      </div>
+
+    </div>
+  </div><!-- end main-grid -->
+
+  <footer>
+    MediPredict &nbsp;·&nbsp; Intelligent Healthcare Analytics &nbsp;·&nbsp;
+    Random Forest + SMOTE &nbsp;·&nbsp; Built with Flask + scikit-learn
+  </footer>
+
+</div><!-- wrapper -->
+
+<script>
+  /* ── Load metrics on page load ──────────────────────── */
+  fetch("/metrics")
+    .then(r => r.json())
+    .then(m => {
+      if (!m.accuracy) return;
+      document.getElementById("mAcc").textContent  = pct(m.accuracy);
+      document.getElementById("mPrec").textContent = pct(m.precision);
+      document.getElementById("mRec").textContent  = pct(m.recall);
+      document.getElementById("mF1").textContent   = pct(m.f1_score);
+      document.getElementById("mAUC").textContent  = pct(m.roc_auc);
+    })
+    .catch(() => {});
+
+  function pct(v) { return (v * 100).toFixed(1) + "%"; }
+
+  /* ── Prediction ─────────────────────────────────────── */
+  async function runPrediction() {
+    const btn = document.getElementById("predictBtn");
+    btn.classList.add("loading");
+    btn.textContent = "Analysing…";
+
+    const payload = {
+      age:                    document.getElementById("age").value,
+      gender:                 document.getElementById("gender").value,
+      diagnosis_code:         document.getElementById("diagnosis_code").value,
+      length_of_stay:         document.getElementById("length_of_stay").value,
+      num_previous_admissions:document.getElementById("num_previous_admissions").value,
+      num_medications:        document.getElementById("num_medications").value || 7,
+      num_lab_procedures:     document.getElementById("num_lab_procedures").value || 43,
+      a1c_result:             document.getElementById("a1c_result").value,
+    };
+
+    try {
+      const res  = await fetch("/predict", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(payload),
+      });
+      const data = await res.json();
+
+      if (!data.success) throw new Error(data.error);
+
+      showResult(data);
+    } catch (err) {
+      alert("Error: " + err.message);
+    } finally {
+      btn.classList.remove("loading");
+      btn.textContent = "⚕  Assess Readmission Risk";
+    }
+  }
+
+  /* ── Render result ──────────────────────────────────── */
+  function showResult(data) {
+    const panel = document.getElementById("resultPanel");
+    panel.className = "result-panel " + data.risk_class;
+    panel.style.display = "block";
+
+    document.getElementById("resultIcon").textContent  = data.risk_class === "high" ? "🚨" : "✅";
+    document.getElementById("resultLabel").textContent = data.risk;
+    document.getElementById("resultProb").textContent  =
+      `Readmission probability: ${data.probability}%`;
+
+    animateGauge(data.probability, data.risk_class);
+    panel.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  /* ── Gauge animation ────────────────────────────────── */
+  function animateGauge(pct, riskClass) {
+    const fill   = document.getElementById("gaugeFill");
+    const label  = document.getElementById("gaugeValue");
+    const total  = 220;                           // arc length
+    const offset = total - (pct / 100) * total;
+
+    fill.style.stroke = riskClass === "high" ? "#ff4d6d" : "#00d4b4";
+    fill.style.strokeDashoffset = offset;
+    label.textContent = pct + "%";
+  }
+</script>
+</body>
+</html>
